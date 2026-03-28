@@ -149,7 +149,7 @@ if 'weather_df' in st.session_state and st.session_state.weather_df is not None:
     l2_stats = get_weekly_stats(week_lag2)
     l3_stats = get_weekly_stats(week_lag3)
 
-    st.header("📋 สรุปสภาพอากาศสัปดาห์ล่าสุด (Current Week)")
+    st.header("📋 สภาพอากาศ 7 วันที่ผ่านมา")
     with st.container(border=True):
         col_m1, col_m2, col_m3, col_m4 = st.columns(4)
         col_m1.metric("🌡️ อุณหภูมิเฉลี่ย", f"{c_stats['temp']:.1f} °C")
@@ -218,15 +218,18 @@ if 'weather_df' in st.session_state and st.session_state.weather_df is not None:
             elif level >= 2: st.warning(f"สถานะ: **{status}**")
             else: st.success(f"สถานะ: **{status}**")
 
-        st.header("🔔 ผลการพยากรณ์ล่วงหน้า 7 วัน")
-        
+        future_start_date = target_date + timedelta(days=1)
+        future_end_date = target_date + timedelta(days=7)
+        date_range_str = f"{future_start_date.strftime('%d %b %Y')} - {future_end_date.strftime('%d %b %Y')}"
+        st.header("🔔 ผลการพยากรณ์ความเสี่ยงล่วงหน้า 7 วัน")
+        box_height = 320
         col_l1, col_l2 = st.columns(2)
         with col_l1:
-            with st.container(border=True):
-                st.subheader("🌿 อัตราการระบาดของโรคราสนิม ")
+            with st.container(border=True, height=box_height):
+                st.subheader("🌿 ระดับความรุนแรงของโรคราสนิม ")
                 st.plotly_chart(create_gauge_chart(leaf_level), use_container_width=True)
         with col_l2:
-            with st.container(border=True):
+            with st.container(border=True, height=box_height):
                 st.subheader("ความชุกของโรคราสนิมกาแฟ ")
                 st.markdown(f"<h1 style='text-align: center; font-size: 4rem; margin-bottom: 0px;'>{leaf_incidence:.1f}%</h1>", unsafe_allow_html=True)
                 st.progress(min(int(leaf_incidence), 100))
@@ -234,11 +237,11 @@ if 'weather_df' in st.session_state and st.session_state.weather_df is not None:
 
         col_b1, col_b2 = st.columns(2)
         with col_b1:
-            with st.container(border=True):
-                st.subheader("🍒 อัตราการระบาดของโรคผลเน่า ")
+            with st.container(border=True, height=box_height):
+                st.subheader("🍒 ระดับความรุนแรงของโรคผลเน่า ")
                 st.plotly_chart(create_gauge_chart(berry_level), use_container_width=True)
         with col_b2:
-            with st.container(border=True):
+            with st.container(border=True, height=box_height):
                 st.subheader("ความชุกของโรคผลเน่า ")
                 st.markdown(f"<h1 style='text-align: center; font-size: 4rem; margin-bottom: 0px;'>{berry_incidence:.1f}%</h1>", unsafe_allow_html=True)
                 st.progress(min(int(berry_incidence), 100))
@@ -246,22 +249,44 @@ if 'weather_df' in st.session_state and st.session_state.weather_df is not None:
 
         st.divider()
         st.header("📍 แนวทางจัดการและแผนที่ความเสี่ยง")
-        col_adv, col_map = st.columns([1, 1.2])
+        col_adv, col_map = st.columns([1, 1])
+        
+        container_height = 550
         
         with col_adv:
-            with st.container(border=True):
+            with st.container(border=True, height=container_height):
                 st.subheader("💡 แนวทางการจัดการเชิงรุก:")
                 if overall_level >= 4:
-                    st.error("🆘 **ระดับวิกฤต:**\n1. พ่นสารกำจัดเชื้อรากลุ่ม Copper ทันที\n2. ตัดแต่งกิ่งให้โปร่งเพื่อลดความชื้นสะสม\n3. กำจัดใบ/ผลที่ติดโรคออกนอกแปลงและเผาทำลาย")
+                    st.error("### 🆘 ระดับวิกฤต (Critical)")
+                    st.markdown("""
+                    #### **ข้อควรปฏิบัติทันที:**
+                    1. **พ่นสารกำจัดเชื้อรา:** กลุ่ม Copper ทันที
+                    2. **ตัดแต่งกิ่ง:** ให้โปร่งเพื่อลดความชื้นสะสม
+                    3. **กำจัดส่วนที่ติดโรค:** นำใบ/ผลออกนอกแปลงและเผาทำลาย
+                    """)
                 elif overall_level >= 2:
-                    st.warning("⚠️ **ระดับเฝ้าระวัง:**\n1. สำรวจใต้ใบและผลอย่างละเอียดสัปดาห์ละ 2 ครั้ง\n2. ใช้สารชีวภัณฑ์ (เช่น ไตรโคเดอร์มา) ฉีดพ่น\n3. ตรวจสอบและปรับปรุงระบบการระบายน้ำ")
+                    st.warning("### ⚠️ ระดับเฝ้าระวัง (Watch)")
+                    st.markdown("""
+                    #### **ข้อควรปฏิบัติ:**
+                    1. **สำรวจแปลง:** ตรวจใต้ใบและผลอย่างละเอียดสัปดาห์ละ 2 ครั้ง
+                    2. **ใช้สารชีวภัณฑ์:** เช่น ไตรโคเดอร์มา ฉีดพ่นป้องกัน
+                    3. **จัดการระบบน้ำ:** ตรวจสอบการระบายน้ำไม่ให้ท่วมขัง
+                    """)
                 else:
-                    st.success("✅ **ระดับปกติ:**\n1. บำรุงต้นตามรอบปกติเพื่อความแข็งแรง\n2. รักษาความสะอาดรอบๆ แปลงปลูก\n3. ติดตามประกาศสภาพอากาศอย่างสม่ำเสมอ")
+                    st.success("### ✅ ระดับปกติ (Stable)")
+                    st.markdown("""
+                    #### **การดูแลรักษา:**
+                    1. **บำรุงต้น:** ใส่ปุ๋ยตามรอบปกติเพื่อให้ต้นแข็งแรง
+                    2. **รักษาความสะอาด:** กำจัดวัชพืชรอบโคนต้น
+                    3. **ติดตามข่าวสาร:** ตรวจเช็คสภาพอากาศสม่ำเสมอ
+                    """)
+                    
+                st.write("") # เพิ่มช่องว่าง
                 st.info(f"**🔬 วิเคราะห์สถิติ:** ความชื้นสัมพัทธ์เฉลี่ย {c_stats['humid']:.1f}% เป็นปัจจัยหลักที่ส่งผลต่อการขยายตัวของเชื้อรา")
 
         with col_map:
-            with st.container(border=True):
-                st.subheader("🗺️ แผนที่ความเสี่ยงระดับอำเภอ (Choropleth Map)")
+            with st.container(border=True, height=container_height):
+                st.subheader("🗺️ แผนที่ความเสี่ยงระดับอำเภอ")
                 
                 map_view = st.radio(
                     "🔎 เลือกระดับการมองเห็น:",
@@ -271,7 +296,7 @@ if 'weather_df' in st.session_state and st.session_state.weather_df is not None:
                 
                 if map_view == "ภาพรวมทั้งจังหวัด":
                     map_center = {"lat": 18.7883, "lon": 98.9853}
-                    map_zoom = 7.5
+                    map_zoom = 6
                 else:
                     map_center = {"lat": c_lat, "lon": c_lon} 
                     map_zoom = 9.5
@@ -344,19 +369,42 @@ if 'weather_df' in st.session_state and st.session_state.weather_df is not None:
                         mapbox_style="carto-positron", zoom=map_zoom, center=map_center,
                         opacity=0.6, labels={'RiskLevel': 'ระดับความเสี่ยง (0-6)', 'District': 'อำเภอ'}
                     )
-                    fig_map.update_layout(margin={"r":0,"t":0,"l":0,"b":0}, coloraxis_colorbar=dict(title="ความเสี่ยง"))
+                    fig_map.update_layout(height=350, margin={"r":0,"t":0,"l":0,"b":0}, coloraxis_colorbar=dict(title="ความเสี่ยง"))
                     st.plotly_chart(fig_map, use_container_width=True)
                 else:
                     st.error("ไม่สามารถโหลดแผนที่ได้")
 
     st.divider()
-    with st.expander("📉 ดูรายละเอียดกราฟแนวโน้มสภาพอากาศย้อนหลัง"):
-        fig_line = px.line(df, x="Date", y=["Temp", "Humid"], template="plotly_white", title="การผันแปรของอุณหภูมิและความชื้น")
-        st.plotly_chart(fig_line, use_container_width=True)
+    st.subheader("📉 รายละเอียดกราฟแนวโน้มสภาพอากาศย้อนหลัง")
+    col_g1, col_g2 = st.columns(2)
+    
+    with col_g1:
+        # กราฟอุณหภูมิ (สีแดงส้ม)
+        fig_temp = px.line(df, x="Date", y="Temp", template="plotly_white", 
+                           title="🌡️ แนวโน้มอุณหภูมิเฉลี่ย (°C)", color_discrete_sequence=['#ef553b'])
+        st.plotly_chart(fig_temp, use_container_width=True)
+        
+        # กราฟปริมาณน้ำฝน (สีฟ้าคราม)
+        fig_rain = px.line(df, x="Date", y="Rain", template="plotly_white", 
+                           title="🌧️ แนวโน้มปริมาณน้ำฝน (มม.)", color_discrete_sequence=['#00cc96'])
+        st.plotly_chart(fig_rain, use_container_width=True)
+
+    with col_g2:
+        # กราฟความชื้นสัมพัทธ์ (สีน้ำเงิน)
+        fig_humid = px.line(df, x="Date", y="Humid", template="plotly_white", 
+                            title="💧 แนวโน้มความชื้นสัมพัทธ์ (%)", color_discrete_sequence=['#636efa'])
+        st.plotly_chart(fig_humid, use_container_width=True)
+        
+        # กราฟความเร็วลม (สีม่วง)
+        fig_wind = px.line(df, x="Date", y="Wind", template="plotly_white", 
+                           title="💨 แนวโน้มความเร็วลม (m/s)", color_discrete_sequence=['#ab63fa'])
+        st.plotly_chart(fig_wind, use_container_width=True)
 
 else:
     st.info("👈 **โปรดเริ่มต้น:** เลือกพิกัดสวนกาแฟ ระบุวันที่เป้าหมาย และกดปุ่มดึงข้อมูลอากาศจากแถบด้านข้าง")
-    st.image("https://images.unsplash.com/photo-1559056199-641a0ac8b55e?q=80&w=2070&auto=format&fit=crop", caption="Precision Agriculture System")
+    
+    col1, col2, col3 = st.columns([1, 1, 1])
+    st.image("my_coffee.png", caption="ระบบแจ้งเตือนโรคกาแฟอัจฉริยะ", use_container_width=True)
 
 st.divider()
 st.caption("© 2026 KMUTT Statistics & Data Science | Coffee Disease Early Warning System")
